@@ -8,8 +8,8 @@ from PIL import Image
 import numpy as np
 from pydantic import BaseModel
 from fastapi.middleware.cors import CORSMiddleware
+import joblib
 
-CNN = tf.keras.models.load_model('./cnn.h5')
 app = FastAPI()
 
 origins = [
@@ -29,7 +29,14 @@ app.add_middleware(
 )
 
 
-class Request(BaseModel):
+CNN = None
+
+@app.on_event("startup")
+def load_model():
+    global CNN
+    CNN = tf.keras.models.load_model('./cnn.h5')
+
+class PredictRequest(BaseModel):
     image:str
 
 
@@ -38,7 +45,7 @@ async def root():
     return {'message':"Hi"}
 
 @app.post('/predict')
-async def pred(request: Request):
+async def pred(request: PredictRequest):
         try:
             # Parse JSON from request body
             body = request.image
